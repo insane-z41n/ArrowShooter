@@ -14,21 +14,27 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <math.h>
+
 
 Shader shader;
 Model *mesh;
-Model *cube;
-Model *torus;
+
 Model *sphere;
-Model *cylinder;
+Model *target;
 Model *plane;
-Model *gun;
+Model *bow;
 glm::mat4 projection;
 glm::mat4 view;
 glm::mat4 model;
 bool drawTorus = true;
 bool spin = false;
-float rotation = 0.0f;
+float targetPosX = 1.0f;
+float targetPosY = 0.0f;
+float targetSpeed = 0.05f;
+int level = 1;
+bool isTargetMovingRight;
+bool isTargetMovingUp;
 glm::vec4 lightPosition = glm::vec4(0.0f,3.0f,0.0f,1.0f);
 
 QuatCamera * camera;
@@ -85,6 +91,11 @@ void dumpInfo(void)
 	checkError ("dumpInfo");
 }
 
+void renderTargets(bool useMat)
+{
+
+}
+
 void display(void)
 {
 	glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -104,20 +115,66 @@ void display(void)
 	bool useMat = false;
 	
 	//mesh->render(view * model,projection, true); // Render current active model.
-	//gun->setOverrideDiffuseMaterial( glm::vec4(.3, 0.3, 0.3, 1.0));
-	//gun->setOverrideAmbientMaterial(  glm::vec4(0.0, 0.0, 0.0, 1.0));
-	//plane->setOverrideSpecularMaterial( glm::vec4(.70, 0.70, 0.70, 1.0));
-	//gun->setOverrideSpecularShininessMaterial( 40.0f);
-	//gun->setOverrideEmissiveMaterial(  glm::vec4(0.0, 0.0, 0.0, 1.0));
-	//gun->render(glm::translate(1.0f,-1.0f,-2.0f)* glm::scale(.05f,.05f,.05f)*glm::rotate(-90.0f,0.0f,1.0f,0.0f) , projection, false);
-	//cylinder->setOverrideDiffuseMaterial( glm::vec4(1.0, 0.0, 0.0, 1.0));
-	//cylinder->setOverrideAmbientMaterial(  glm::vec4(0.0, 0.0, 0.0, 1.0));
-	//cylinder->setOverrideSpecularMaterial( glm::vec4(1.0, 1.0, 1.0, 1.0));
-	//cylinder->setOverrideEmissiveMaterial(  glm::vec4(0.0, 0.0, 0.0, 1.0));
-	//cylinder->render(view*glm::translate(0.0f,5.0f,0.0f)*glm::rotate(180.0f,1.0f,0.0f,0.0f), projection, useMat);
+	//bow->setOverrideDiffuseMaterial( glm::vec4(.3, 0.3, 0.3, 1.0));
+	//bow->setOverrideAmbientMaterial(  glm::vec4(0.0, 0.0, 0.0, 1.0));
+	//bow->setOverrideSpecularShininessMaterial( 40.0f);
+	//bow->setOverrideEmissiveMaterial(  glm::vec4(0.0, 0.0, 0.0, 1.0));
+	bow->render(glm::translate(0.0f,0.0f,-3.0f)* glm::scale(0.05f,0.05f, 0.05f) , projection, false);
+
 	
+	plane->setOverrideSpecularMaterial( glm::vec4(.70, 0.70, 0.70, 1.0));
 	plane->setOverrideDiffuseMaterial( glm::vec4(1.0, 0.0, 0.0, 1.0));
 	plane->setOverrideAmbientMaterial(  glm::vec4(1.0 , 0.0, 0.0, 1.0));
+	
+
+	// Moving left and right.
+	if (targetPosX >= 10.0f) {
+		isTargetMovingRight = false;
+	}
+	else if (targetPosX <= -10.0f) {
+		isTargetMovingRight = true;
+	}
+
+	// Moving up and down.
+	if (targetPosY >= 5.0f) {
+		isTargetMovingUp = false;
+	}
+	else if (targetPosY <= -1.0f) {
+		isTargetMovingUp = true;
+	}
+	
+	if (level == 2) {
+		targetSpeed = 0.15f;
+	}
+
+	if (level >= 3) {
+		if (isTargetMovingUp) {
+			targetPosY += (1.0f * targetSpeed);
+		}
+		else {
+			targetPosY -= (1.0f * targetSpeed);
+		}
+	}
+
+	if (isTargetMovingRight) {
+		
+		targetPosX += (1.0f * targetSpeed);
+		
+	}
+	else {
+		targetPosX -= (1.0f * targetSpeed);
+	}
+
+
+
+
+	target->setOverrideDiffuseMaterial(glm::vec4(1.0, 0.0, 0.0, 1.0));
+	target->setOverrideAmbientMaterial(glm::vec4(0.0, 0.0, 0.0, 1.0));
+	target->setOverrideSpecularMaterial(glm::vec4(1.0, 1.0, 1.0, 1.0));
+	target->setOverrideEmissiveMaterial(glm::vec4(0.0, 0.0, 0.0, 1.0));
+	target->render(view * glm::translate(targetPosX, targetPosY, 0.0f) * glm::rotate(90.0f, 1.0f, 0.0f, 0.0f) * glm::scale(1.0f, 0.05f, 1.0f), projection, useMat);
+
+
 	//plane->setOverrideSpecularMaterial( glm::vec4(1.0, 1.0, 1.0, 1.0));
 	//plane->setOverrideSpecularShininessMaterial( 90.0f);
 	//plane->setOverrideEmissiveMaterial(  glm::vec4(0.0, 0.0, 0.0, 1.0));
@@ -157,8 +214,16 @@ void keyboard(unsigned char key, int x, int y)
 	case 27:
 		exit(0);
 		break;
+
+	//TODO remove this when actual level is needed from increase
+	case 'w':
+		level += 1;
+		break;
    }
+
 }
+
+
 
 static void passiveMouse(int x, int y)
 {
@@ -189,7 +254,8 @@ int main(int argc, char** argv)
 
 	sphere = new Model(&shader,"models/sphere.obj", "models/");
 	plane = new Model(&shader,"models/plane.obj",  "models/");
-
+	bow = new Model(&shader, "models/bow.obj", "models/");
+	target = new Model(&shader, "models/cylinder.obj", "models/");
 	mesh = sphere;
 
 	glutMainLoop();
