@@ -11,11 +11,13 @@
 #include "Model.h"
 #include "Shader.h"
 #include "QuatCamera.h"
+#include "Particle.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
-
+#include <chrono>
+#include <algorithm>
 
 Shader shader;
 Model *mesh;
@@ -37,6 +39,10 @@ bool isTargetMovingRight;
 bool isTargetMovingUp;
 glm::vec4 lightPosition = glm::vec4(0.0f,3.0f,0.0f,1.0f);
 
+auto previousTime = std::chrono::high_resolution_clock::now();
+
+std::vector<Particle> particles;
+int NUM_PARTICLES = 10000;
 QuatCamera * camera;
 
 /* report GL errors, if any, to stderr */
@@ -46,6 +52,78 @@ void checkError(const char *functionName)
 	while (( error = glGetError() ) != GL_NO_ERROR) {
 	  std::cerr << "GL error " << error << " detected in " << functionName << std::endl;
 	}
+}
+void SortParticles() {
+	std::sort(&particles[0], &particles[NUM_PARTICLES]);
+}
+
+void initParticles()
+{
+	for (int i = 0; i < NUM_PARTICLES; i++) {
+		Particle p;
+		p.position = glm::vec3(0.0f, 0.0f, 0.0f);
+		p.velocity = glm::vec3(9.8f, 9.8f, 9.8f);
+		p.color = glm::vec4(1.0f);
+		p.size = 10.0f;
+		p.life = 1.0f;
+		particles.push_back(p);
+
+	}
+}
+
+void updateParticles(float dt)
+{
+	/*for (int i = 0; i < NUM_PARTICLES; i++) {
+		Particle& p = particles[i];
+		p.life -= dt;
+		p.position += p.velocity * dt;
+	}*/
+
+	for (int i = 0; i < NUM_PARTICLES; i++) {
+		Particle& p = particles[i];
+
+		if (p.life > 0.0f) {
+			p.life -= dt;
+			if (p.life > 0.0f) {
+				p.velocity += glm::vec3(0.0f, -9.81f, 0.0f) * dt * 0.5f;
+				p.position += p.velocity* dt;
+				p.cameradistance = glm::length(p.position - camera->GetPos());
+			}
+			else {
+				p.cameradistance = -1.0f;
+			}
+		}
+	}
+
+
+}
+
+void renderParticles() {
+	// Enable blending
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+	// Set the point size
+	glPointSize(10.0f);
+
+	// Enable vertex array and specify pointers
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Particle), (void*)offsetof(Particle, position));
+	glEnableVertexAttribArray(1);
+	glVertexAttribPointer(1, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(Particle), (void*)offsetof(Particle, color));
+
+	for (int i = 0; i < NUM_PARTICLES; i++) {
+		Particle& p = particles[i];
+		glColor4f(p.color.r, p.color.g, p.color.b, p.life);
+		glVertex3f(p.position.x, p.position.y, p.position.z);
+	}
+
+	// Draw particles
+	glDrawArrays(GL_POINTS, 0, NUM_PARTICLES);
+
+	// Disable vertex arrays
+	glDisableVertexAttribArray(0);
+	glDisableVertexAttribArray(1);
 }
 
 void initShader(void)
@@ -72,7 +150,7 @@ void init(void)
 	// Perspective projection matrix.
 	projection = glm::perspective(45.0f, 800.0f/600.0f, 1.0f, 1000.0f);
 
-
+	initParticles();
 	
 
 	// Load identity matrix into model matrix.
@@ -91,15 +169,16 @@ void dumpInfo(void)
 	checkError ("dumpInfo");
 }
 
-void renderTargets(bool useMat)
-{
-
-}
 
 void display(void)
 {
 	glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	camera->OnRender();
+
+	auto now = std::chrono::high_resolution_clock::now();
+	float delta_time = std::chrono::duration_cast<std::chrono::milliseconds>(now - previousTime).count() / 1000.0f;
+	previousTime = now;
+
 
 	view = glm::lookAt(camera->GetPos(), camera->GetLookAtPoint(), camera->GetUp());
 	
@@ -126,6 +205,8 @@ void display(void)
 	plane->setOverrideDiffuseMaterial( glm::vec4(1.0, 0.0, 0.0, 1.0));
 	plane->setOverrideAmbientMaterial(  glm::vec4(1.0 , 0.0, 0.0, 1.0));
 	
+	updateParticles(delta_time);
+	renderParticles();
 
 	// Moving left and right.
 	if (targetPosX >= 10.0f) {
