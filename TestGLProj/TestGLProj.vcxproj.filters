@@ -53,9 +53,18 @@
     <ClInclude Include="Particle.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="stb_image.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="shaders\phong3.frag" />
     <None Include="shaders\phong3.vert" />
+    <None Include="6.1.skybox.fs">
+      <Filter>Source Files\Resource Files</Filter>
+    </None>
+    <None Include="6.1.skybox.vs">
+      <Filter>Source Files\Resource Files</Filter>
+    </None>
   </ItemGroup>
 </Project>

@@ -94,9 +94,12 @@
     <ClInclude Include="QuatCamera.h" />
     <ClInclude Include="Random.h" />
     <ClInclude Include="Shader.h" />
+    <ClInclude Include="stb_image.h" />
     <ClInclude Include="tiny_obj_loader.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="6.1.skybox.fs" />
+    <None Include="6.1.skybox.vs" />
     <None Include="shaders\phong3.frag" />
     <None Include="shaders\phong3.vert" />
   </ItemGroup>
