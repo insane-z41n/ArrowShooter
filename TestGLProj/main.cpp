@@ -37,6 +37,7 @@ float targetSpeed = 0.05f;
 int level = 1;
 bool isTargetMovingRight;
 bool isTargetMovingUp;
+bool enableParticles;
 glm::vec4 lightPosition = glm::vec4(0.0f,3.0f,0.0f,1.0f);
 
 auto previousTime = std::chrono::high_resolution_clock::now();
@@ -62,7 +63,7 @@ void initParticles()
 	for (int i = 0; i < NUM_PARTICLES; i++) {
 		Particle p;
 		p.position = glm::vec3(0.0f, 0.0f, 0.0f);
-		p.velocity = glm::vec3(9.8f, 9.8f, 9.8f);
+		p.velocity = glm::vec3(0.0, 9.8f, 0.0f);
 		p.color = glm::vec4(1.0f);
 		p.size = 10.0f;
 		p.life = 1.0f;
@@ -98,6 +99,13 @@ void updateParticles(float dt)
 
 }
 
+void resetParticles() {
+	for (int i = 0; i < NUM_PARTICLES; i++) {
+		Particle& p = particles[i];
+		p.life = 1.0f;
+	}
+}
+
 void renderParticles() {
 	// Enable blending
 	glEnable(GL_BLEND);
@@ -106,9 +114,9 @@ void renderParticles() {
 	// Set the point size
 	glPointSize(10.0f);
 
-	// Enable vertex array and specify pointers
+	// Enable vertex array and specify 
 	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Particle), (void*)offsetof(Particle, position));
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_TRUE, sizeof(Particle), (void*)offsetof(Particle, position));
 	glEnableVertexAttribArray(1);
 	glVertexAttribPointer(1, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(Particle), (void*)offsetof(Particle, color));
 
@@ -194,19 +202,25 @@ void display(void)
 	bool useMat = false;
 	
 	//mesh->render(view * model,projection, true); // Render current active model.
-	//bow->setOverrideDiffuseMaterial( glm::vec4(.3, 0.3, 0.3, 1.0));
-	//bow->setOverrideAmbientMaterial(  glm::vec4(0.0, 0.0, 0.0, 1.0));
-	//bow->setOverrideSpecularShininessMaterial( 40.0f);
-	//bow->setOverrideEmissiveMaterial(  glm::vec4(0.0, 0.0, 0.0, 1.0));
-	bow->render(glm::translate(0.0f,0.0f,-3.0f)* glm::scale(0.05f,0.05f, 0.05f) , projection, false);
+
+
+	bow->setOverrideDiffuseMaterial( glm::vec4(.3, 0.3, 0.3, 1.0));
+	bow->setOverrideAmbientMaterial(  glm::vec4(0.0, 0.0, 0.0, 1.0));
+	bow->setOverrideSpecularShininessMaterial( 40.0f);
+	bow->setOverrideEmissiveMaterial(  glm::vec4(0.0, 0.0, 0.0, 1.0));
+	bow->render(glm::translate(1.0f, -1.0f, -2.0f) * glm::scale(.05f, .05f, .05f) * glm::rotate(-90.0f, 0.0f, 1.0f, 0.0f), projection, false);
 
 	
 	plane->setOverrideSpecularMaterial( glm::vec4(.70, 0.70, 0.70, 1.0));
 	plane->setOverrideDiffuseMaterial( glm::vec4(1.0, 0.0, 0.0, 1.0));
 	plane->setOverrideAmbientMaterial(  glm::vec4(1.0 , 0.0, 0.0, 1.0));
 	
-	updateParticles(delta_time);
-	renderParticles();
+	if (enableParticles)
+	{
+		renderParticles();
+		updateParticles(delta_time);
+	}
+
 
 	// Moving left and right.
 	if (targetPosX >= 10.0f) {
@@ -299,7 +313,12 @@ void keyboard(unsigned char key, int x, int y)
 	//TODO remove this when actual level is needed from increase
 	case 'w':
 		level += 1;
+		resetParticles();
 		break;
+	case 'x':
+		enableParticles = !enableParticles;
+		break;
+
    }
 
 }
